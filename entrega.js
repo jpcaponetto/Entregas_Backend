@@ -1,8 +1,37 @@
+const fs = require('fs');
+
 class ProductManager {
   constructor() {
     this.products = [];
     this.nextId = 1; // ID autoincrementable
+    this.path = "./products.json"
   }
+
+
+  async save(data) {  
+      const content = JSON.stringify(data, null, "\t");
+      try {  
+        await fs.writeFileSync(this.path, content, "utf-8");
+      } catch (error) {
+        console.log(error);
+      }
+    }
+  
+   
+  
+    async load() {
+      try {
+        if(fs.existsSync(this.path)){
+          const jsonToArray = await fs.readFileSync(this.path,'utf-8');
+          this.products = JSON.parse(jsonToArray);
+        } else {
+          return "no se encontró el archivo products.json"
+        }
+      } catch (err) {
+        console.log(err);
+      }
+    }
+
 
   // Agregando un nuevo producto
   addProduct(title, description, price, thumbnail, code, stock) {
@@ -15,7 +44,7 @@ class ProductManager {
     }
 
     const product = {
-      id: this.nextId++,
+      id: this.products.length+1,
       title,
       description,
       price,
@@ -24,18 +53,29 @@ class ProductManager {
       stock,
     };
     this.products.push(product);
+    this.save(this.products);
   }
 
   // Eliminar un producto por su nombre
-  removeProduct(code) {
-    this.products = this.products.filter((product) => product.code !== code);
-  }
+  deleteProduct(id) {
+    if( this.products.length > 0) {
+      this.products = this.products.filter((product) => product.id !== id); // va a aplicar un filtro a los productos, todos los productos menos el que tenga este ID (osea lo va a borrar)
+      this.save(this.products);
+    } else {
+      return "La lista está vacia"
+    }
+  } 
 
   // Actualizar la información de un producto por su código
-  updateProduct(code, updatedProduct) {
-    this.products = this.products.map((product) =>
-      product.code === code ? { ...product, ...updatedProduct } : product
+  updateProduct(id, title, description, price, thumbnail, code, stock) {
+    if( this.products.length > 0) {
+      this.products = this.products.map((product) =>
+      product.id === id ? { ...product, title, description, price, thumbnail, code, stock } : product
     );
+    this.save(this.products);
+    } else {
+      return "la lista está vacia"
+    }
   }
 
   // Obtener un producto por su código
@@ -57,8 +97,8 @@ class ProductManager {
     return this.products;
   }
 }
-
-const productManager = new ProductManager();
-productManager.addProduct("Producto prueba", "Producto de prueba", 200.00, "Sin Imagen", "abc123", 25);
-
-console.log(productManager.getAllProducts());
+(async () => {
+  const productManager = new ProductManager();
+  await productManager.load();
+  console.log(productManager.getAllProducts());
+})();
