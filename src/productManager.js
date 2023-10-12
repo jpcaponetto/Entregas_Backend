@@ -1,29 +1,28 @@
-const fs = require('fs');
+const fs = require("fs");
 
 class ProductManager {
-  constructor() {
+  constructor(path) {
     this.products = [];
     this.nextId = 1; // ID autoincrementable
-    this.path = "./products.json"
+    this.path = path ?? "./products.json";
   }
 
 
   async save(data) {  
       const content = JSON.stringify(data, null, "\t");
       try {  
-        await fs.writeFileSync(this.path, content, "utf-8");
+        await fs.promises.writeFileSync(this.path, content, "utf-8");
       } catch (error) {
         console.log(error);
       }
     }
   
-   
   
     async load() {
       try {
         if(fs.existsSync(this.path)){
-          const jsonToArray = await fs.readFileSync(this.path,'utf-8');
-          this.products = JSON.parse(jsonToArray);
+          const jsonToArray = await fs.promises.readFile(this.path,'utf-8');
+          return JSON.parse(jsonToArray);
         } else {
           return "no se encontró el archivo products.json"
         }
@@ -35,7 +34,7 @@ class ProductManager {
 
   // Agregando un nuevo producto
   addProduct(title, description, price, thumbnail, code, stock) {
-    if (!title || !description || !price || !thumbnail || !code || stock === undefined) {
+    if (!title || !description || !price || !thumbnail || !code || !stock === undefined) {
       throw new Error("Error. Los campos son obligatorios.");
     }
 
@@ -84,10 +83,11 @@ class ProductManager {
   }
 
  // producto por su ID
-  getProductById(id) {
-  const product = this.products.find((product) => product.id === id);
+  getProductById(id, list) {
+  // const product = this.products.find((product) => product.id === id);  No hacemos de esta manera porque
+  const product = list.find((product) => product.id === id);
   if (!product) {
-    return "Not Found";
+    return "El producto no existe";
   }
   return product;
 }
@@ -97,8 +97,5 @@ class ProductManager {
     return this.products;
   }
 }
-(async () => {
-  const productManager = new ProductManager();
-  await productManager.load();
-  console.log(productManager.getAllProducts());
-})();
+
+module.exports = ProductManager;
